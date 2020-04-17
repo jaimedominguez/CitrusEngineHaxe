@@ -1,0 +1,124 @@
+package citrus.input.controllers.starling;
+
+import citrus.input.controllers.AVirtualButton;
+import starling.core.Starling;
+import starling.display.Image;
+import starling.events.Touch;
+import starling.events.TouchEvent;
+import starling.events.TouchPhase;
+import starling.textures.Texture;
+import flash.display.BitmapData;
+import flash.display.Sprite;
+
+class VirtualButton extends AVirtualButton
+{
+    
+    public var graphic : starling.display.Sprite;
+    // main Sprite container.
+    
+    private var button : Image;
+    
+    public var buttonUpTexture : Texture;
+    public var buttonDownTexture : Texture;
+    
+    public function new(name : String, params : Dynamic = null)
+    {
+        graphic = new starling.display.Sprite();
+        super(name, params);
+        _x = (_x) ? _x : Starling.current.stage.stageWidth - (_margin + 2 * _buttonradius) / Starling.current.contentScaleFactor;
+        _y = (_y) ? _y : Starling.current.stage.stageHeight - 2 * _buttonradius / Starling.current.contentScaleFactor;
+        
+        initGraphics();
+    }
+    
+    override private function initGraphics() : Void {
+        if (buttonUpTexture == null)
+        {
+            var tempSprite : Sprite = new Sprite();
+            var tempBitmapData : BitmapData = new BitmapData(_buttonradius * 2, _buttonradius * 2, true, 0x00FFFFFF);
+            
+            tempSprite.graphics.clear();
+            tempSprite.graphics.beginFill(0x000000, 0.1);
+            tempSprite.graphics.drawCircle(_buttonradius, _buttonradius, _buttonradius);
+            tempSprite.graphics.endFill();
+            tempBitmapData.draw(tempSprite);
+            buttonUpTexture = Texture.fromBitmapData(tempBitmapData, true, false, Starling.current.contentScaleFactor);
+            tempSprite = null;
+            tempBitmapData = null;
+        }
+        
+        if (buttonDownTexture == null)
+        {
+            var tempSprite2 : Sprite = new Sprite();
+            var tempBitmapData2 : BitmapData = new BitmapData(_buttonradius * 2, _buttonradius * 2, true, 0x00FFFFFF);
+            
+            tempSprite2.graphics.clear();
+            tempSprite2.graphics.beginFill(0xEE0000, 0.85);
+            tempSprite2.graphics.drawCircle(_buttonradius, _buttonradius, _buttonradius);
+            tempSprite2.graphics.endFill();
+            tempBitmapData2.draw(tempSprite2);
+            buttonDownTexture = Texture.fromBitmapData(tempBitmapData2, true, false, Starling.current.contentScaleFactor);
+            tempSprite2 = null;
+            tempBitmapData2 = null;
+        }
+        
+        button = new Image(buttonUpTexture);
+        button.pivotX = button.pivotY = _buttonradius;
+        
+        tempSprite = null;
+        tempBitmapData = null;
+        
+        graphic.x = _x;
+        graphic.y = _y;
+        
+        graphic.addChild(button);
+        
+        Starling.current.stage.addChild(graphic);
+        
+        graphic.addEventListener(TouchEvent.TOUCH, handleTouch);
+    }
+    
+    private function handleTouch(e : TouchEvent) : Void {
+        var buttonTouch : Touch = e.getTouch(button);
+        
+        if (buttonTouch != null)
+        {
+            var _sw1_ = (buttonTouch.phase);            
+
+            switch (_sw1_){
+                
+                case TouchPhase.BEGAN:
+                    (try cast(buttonTouch.target, Image) catch(e:Dynamic) null).texture = buttonDownTexture;
+                    triggerON(buttonAction, 1, null, buttonChannel);
+                
+                case TouchPhase.ENDED:
+                    (try cast(buttonTouch.target, Image) catch(e:Dynamic) null).texture = buttonUpTexture;
+                    triggerOFF(buttonAction, 0, null, buttonChannel);
+            }
+        }
+    }
+    
+    overridepublic function get_visible() : Bool {
+        return _visible = graphic.visible;
+    }
+    
+    overridepublic function set_visible(value : Bool) : Bool {
+        _visible = graphic.visible = value;
+        return value;
+    }
+    
+    override public function destroy() : Void {
+        graphic.removeEventListener(TouchEvent.TOUCH, handleTouch);
+        
+        graphic.removeChildren();
+        
+        Starling.current.stage.removeChild(graphic);
+        
+        buttonUpTexture.dispose();
+        buttonDownTexture.dispose();
+        button.dispose();
+        
+        super.destroy();
+    }
+}
+
